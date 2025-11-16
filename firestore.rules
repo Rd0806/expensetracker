@@ -1,0 +1,26 @@
+// Firestore Security Rules
+// Copy these rules to Firebase Console > Firestore Database > Rules
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Expenses collection rules
+    match /expenses/{expenseId} {
+      // Allow read if the expense belongs to the authenticated user
+      allow read: if request.auth != null && request.auth.uid == resource.data.uid;
+      
+      // Allow create if the user is authenticated and sets their own uid
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.uid;
+      
+      // Allow delete if the expense belongs to the authenticated user
+      allow delete: if request.auth != null && request.auth.uid == resource.data.uid;
+      
+      // Allow update if the expense belongs to the authenticated user
+      // (Not used in this app, but good to have)
+      allow update: if request.auth != null && 
+                     request.auth.uid == resource.data.uid &&
+                     request.auth.uid == request.resource.data.uid;
+    }
+  }
+}
+
