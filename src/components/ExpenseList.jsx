@@ -1,20 +1,14 @@
 import { useState } from 'react';
 import { useExpenses } from '../hooks/useExpenses';
+import { useCurrency } from '../hooks/useCurrency';
 import { FiTrash2 } from 'react-icons/fi';
 
 const ExpenseList = () => {
   const { expenses, loading, deleteExpense } = useExpenses();
+  const { formatCurrency } = useCurrency();
   const [deletingId, setDeletingId] = useState(null);
   const [descriptionFilter, setDescriptionFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
-
-  // Format currency
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
-  };
 
   // Format date
   const formatDate = (date) => {

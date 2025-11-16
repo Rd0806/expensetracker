@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { FiLayout, FiDollarSign } from 'react-icons/fi';
+import { FiLayout, FiDollarSign, FiCalendar } from 'react-icons/fi';
 
 const Sidebar = () => {
   return (
@@ -25,6 +25,15 @@ const Sidebar = () => {
         >
           <FiDollarSign />
           <span>Expenses</span>
+        </NavLink>
+        <NavLink 
+          to="/calendar" 
+          className={({ isActive }) => 
+            `nav-link ${isActive ? 'active' : ''}`
+          }
+        >
+          <FiCalendar />
+          <span>Calendar</span>
         </NavLink>
       </nav>
     </aside>

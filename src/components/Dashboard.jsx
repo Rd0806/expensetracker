@@ -1,16 +1,10 @@
 import { useExpenses } from '../hooks/useExpenses';
+import { useCurrency } from '../hooks/useCurrency';
 
 const Dashboard = () => {
   const { getMonthlyTotal } = useExpenses();
+  const { formatCurrency } = useCurrency();
   const monthlyTotal = getMonthlyTotal();
-
-  // Format currency
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
-  };
 
   // Get current month name
   const getCurrentMonthName = () => {

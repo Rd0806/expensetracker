@@ -5,6 +5,7 @@ import Sidebar from './components/Sidebar';
 import Login from './components/Login';
 import DashboardPage from './pages/DashboardPage';
 import ExpensesPage from './pages/ExpensesPage';
+import CalendarPage from './pages/CalendarPage';
 import './App.css';
 
 const AppContent = () => {
@@ -25,6 +26,7 @@ const AppContent = () => {
               <Routes>
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/expenses" element={<ExpensesPage />} />
+                <Route path="/calendar" element={<CalendarPage />} />
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
               </Routes>
             </div>

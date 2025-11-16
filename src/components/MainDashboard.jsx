@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useExpenses } from '../hooks/useExpenses';
+import { useCurrency } from '../hooks/useCurrency';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const DATE_RANGES = [
@@ -25,6 +26,7 @@ const COLORS = [
 
 const MainDashboard = () => {
   const { expenses, loading } = useExpenses();
+  const { formatCurrency } = useCurrency();
   const [dateRange, setDateRange] = useState('thisMonth');
 
   // Filter expenses based on date range
@@ -126,15 +128,6 @@ const MainDashboard = () => {
     }
   }, [filteredExpenses, dateRange]);
 
-  // Format currency
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount);
-  };
 
   if (loading) {
     return (
