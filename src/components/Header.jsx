@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { FiLogOut } from 'react-icons/fi';
+import { FiLogOut, FiBell, FiSearch } from 'react-icons/fi';
 
 const Header = () => {
   const { currentUser, signOut } = useAuth();
@@ -16,26 +16,36 @@ const Header = () => {
       await signOut();
     } catch (error) {
       console.error('Error signing out:', error);
-      alert('Failed to sign out. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <header className="app-header">
-      <div className="header-content">
-        <h1>Daily Expense Tracker</h1>
+    <header className="app-header glass-panel">
+      <div className="header-search">
+        <FiSearch className="search-icon" />
+        <input type="text" placeholder="Search transactions..." className="search-input" />
+      </div>
+
+      <div className="header-actions">
+        <button className="icon-btn">
+          <FiBell />
+          <span className="notification-dot"></span>
+        </button>
+
         {currentUser && (
-          <div className="header-user">
-            <span className="user-email">{currentUser.email}</span>
+          <div className="user-menu">
+            <div className="avatar">
+              {currentUser.email ? currentUser.email[0].toUpperCase() : 'U'}
+            </div>
             <button 
-              className="btn btn-secondary"
+              className="btn-logout"
               onClick={handleSignOut}
               disabled={loading}
+              title="Sign Out"
             >
               <FiLogOut />
-              <span>{loading ? 'Signing out...' : 'Sign Out'}</span>
             </button>
           </div>
         )}
@@ -45,4 +55,3 @@ const Header = () => {
 };
 
 export default Header;
-
