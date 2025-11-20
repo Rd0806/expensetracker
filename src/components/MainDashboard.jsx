@@ -1,8 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useExpenses } from '../hooks/useExpenses';
 import { useCurrency } from '../hooks/useCurrency';
 import { PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { FiEdit2, FiArrowUp, FiArrowDown, FiTarget, FiZap, FiCheckCircle } from 'react-icons/fi';
+import { FiEdit2, FiTarget, FiZap } from 'react-icons/fi';
 
 const DATE_RANGES = [
   { value: 'thisMonth', label: 'This Month' },
@@ -30,10 +30,13 @@ const MainDashboard = () => {
   const { formatCurrency } = useCurrency();
   const [dateRange, setDateRange] = useState('thisMonth');
 
-  // UI State for Daily Budget
-  const [dailyBudget, setDailyBudget] = useState(150); // Default $150
+  // UI State for Daily Budget with Local Persistence
+  const [dailyBudget, setDailyBudget] = useState(() => {
+    const saved = localStorage.getItem('dailyBudget');
+    return saved ? parseFloat(saved) : 150;
+  });
   const [isEditingBudget, setIsEditingBudget] = useState(false);
-  const [tempBudget, setTempBudget] = useState(150);
+  const [tempBudget, setTempBudget] = useState(dailyBudget);
 
   // Filter expenses
   const filteredExpenses = useMemo(() => {
@@ -120,7 +123,9 @@ const MainDashboard = () => {
   }, [expenses]);
 
   const saveBudget = () => {
-    setDailyBudget(parseFloat(tempBudget));
+    const newBudget = parseFloat(tempBudget);
+    setDailyBudget(newBudget);
+    localStorage.setItem('dailyBudget', newBudget);
     setIsEditingBudget(false);
   };
 
@@ -192,8 +197,9 @@ const MainDashboard = () => {
                         onChange={(e) => setTempBudget(e.target.value)}
                         className="filter-input"
                         autoFocus
+                        style={{ width: '100px', padding: '4px' }}
                     />
-                    <button className="btn-primary" onClick={saveBudget}>Save</button>
+                    <button className="btn-primary" style={{ padding: '4px 12px', fontSize: '0.85rem' }} onClick={saveBudget}>Save</button>
                 </div>
             ) : (
                 <>
