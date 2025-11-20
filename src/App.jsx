@@ -16,12 +16,11 @@ const AppContent = () => {
   }
 
   return (
-    <Router>
       <div className="app">
-        <Header />
         <div className="app-layout">
           <Sidebar />
           <main className="app-main">
+            <Header />
             <div className="container">
               <Routes>
                 <Route path="/dashboard" element={<DashboardPage />} />
@@ -33,17 +32,17 @@ const AppContent = () => {
           </main>
         </div>
       </div>
-    </Router>
   );
 };
 
 function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <Router>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </Router>
   );
 }
 
 export default App;
-
