@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { FiLogOut, FiBell, FiSearch } from 'react-icons/fi';
+import { FiLogOut, FiSearch } from 'react-icons/fi';
 
 const Header = () => {
   const { currentUser, signOut } = useAuth();
@@ -29,11 +29,6 @@ const Header = () => {
       </div>
 
       <div className="header-actions">
-        <button className="icon-btn">
-          <FiBell />
-          <span className="notification-dot"></span>
-        </button>
-
         {currentUser && (
           <div className="user-menu">
             <div className="avatar">
