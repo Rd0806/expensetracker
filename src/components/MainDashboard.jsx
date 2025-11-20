@@ -76,8 +76,8 @@ const MainDashboard = () => {
     const day = parseInt(newSub.date);
     let suffix = 'th';
     if (day === 1 || day === 21 || day === 31) suffix = 'st';
-    elif (day === 2 || day === 22) suffix = 'nd';
-    elif (day === 3 || day === 23) suffix = 'rd';
+    else if (day === 2 || day === 22) suffix = 'nd';
+    else if (day === 3 || day === 23) suffix = 'rd';
 
     const updated = [...subscriptions, {
         id: Date.now(),
