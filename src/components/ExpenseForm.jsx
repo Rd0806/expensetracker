@@ -40,11 +40,15 @@ const ExpenseForm = () => {
     }
 
     try {
+      // Create date object using the input value components to avoid timezone issues
+      const [year, month, day] = date.split('-').map(Number);
+      const expenseDate = new Date(year, month - 1, day);
+
       await addExpense({
         amount: parseFloat(amount),
         description: description.trim(),
         category,
-        date: new Date(date),
+        date: expenseDate,
       });
 
       // Reset form

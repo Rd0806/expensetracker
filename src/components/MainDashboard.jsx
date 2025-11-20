@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useExpenses } from '../hooks/useExpenses';
 import { useCurrency } from '../hooks/useCurrency';
 import { PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { FiEdit2, FiTarget, FiZap } from 'react-icons/fi';
+import { FiEdit2, FiTarget, FiZap, FiTrash2, FiPlus } from 'react-icons/fi';
 
 const DATE_RANGES = [
   { value: 'thisMonth', label: 'This Month' },
@@ -19,24 +19,85 @@ const COLORS = [
   '#FBBF24', // Amber
 ];
 
-const MOCK_SUBSCRIPTIONS = [
-  { name: 'Netflix', cost: 15.99, date: '15th', icon: 'N' },
-  { name: 'Spotify', cost: 9.99, date: '21st', icon: 'S' },
-  { name: 'Adobe CC', cost: 52.99, date: '1st', icon: 'A' },
-];
-
 const MainDashboard = () => {
   const { expenses, loading } = useExpenses();
   const { formatCurrency } = useCurrency();
   const [dateRange, setDateRange] = useState('thisMonth');
 
-  // UI State for Daily Budget with Local Persistence
+  // --- Daily Budget State ---
   const [dailyBudget, setDailyBudget] = useState(() => {
     const saved = localStorage.getItem('dailyBudget');
     return saved ? parseFloat(saved) : 150;
   });
   const [isEditingBudget, setIsEditingBudget] = useState(false);
   const [tempBudget, setTempBudget] = useState(dailyBudget);
+
+  // --- Subscriptions State ---
+  const [subscriptions, setSubscriptions] = useState(() => {
+    const saved = localStorage.getItem('subscriptions');
+    return saved ? JSON.parse(saved) : [
+      { id: 1, name: 'Netflix', cost: 15.99, date: '15th', icon: 'N' },
+      { id: 2, name: 'Spotify', cost: 9.99, date: '21st', icon: 'S' },
+      { id: 3, name: 'Adobe CC', cost: 52.99, date: '1st', icon: 'A' },
+    ];
+  });
+  const [isEditingSubs, setIsEditingSubs] = useState(false);
+  const [newSub, setNewSub] = useState({ name: '', cost: '', date: '' });
+
+  // --- Savings Goal State ---
+  const [savingsGoal, setSavingsGoal] = useState(() => {
+    const saved = localStorage.getItem('savingsGoal');
+    return saved ? JSON.parse(saved) : {
+      name: 'New MacBook Pro',
+      current: 1250,
+      target: 2000,
+      start: 'Jan 1',
+      end: 'June 1'
+    };
+  });
+  const [isEditingGoal, setIsEditingGoal] = useState(false);
+  const [tempGoal, setTempGoal] = useState(savingsGoal);
+
+  // --- Handlers ---
+
+  // Budget
+  const saveBudget = () => {
+    const newBudget = parseFloat(tempBudget);
+    setDailyBudget(newBudget);
+    localStorage.setItem('dailyBudget', newBudget);
+    setIsEditingBudget(false);
+  };
+
+  // Subscriptions
+  const addSubscription = () => {
+    if (!newSub.name || !newSub.cost) return;
+    const updated = [...subscriptions, {
+        id: Date.now(),
+        name: newSub.name,
+        cost: parseFloat(newSub.cost),
+        date: newSub.date || '1st',
+        icon: newSub.name[0].toUpperCase()
+    }];
+    setSubscriptions(updated);
+    localStorage.setItem('subscriptions', JSON.stringify(updated));
+    setNewSub({ name: '', cost: '', date: '' });
+  };
+
+  const removeSubscription = (id) => {
+    const updated = subscriptions.filter(sub => sub.id !== id);
+    setSubscriptions(updated);
+    localStorage.setItem('subscriptions', JSON.stringify(updated));
+  };
+
+  // Savings Goal
+  const saveGoal = () => {
+    setSavingsGoal(tempGoal);
+    localStorage.setItem('savingsGoal', JSON.stringify(tempGoal));
+    setIsEditingGoal(false);
+  };
+
+
+  // --- Chart Data Logic ---
 
   // Filter expenses
   const filteredExpenses = useMemo(() => {
@@ -71,19 +132,19 @@ const MainDashboard = () => {
     });
   }, [expenses, dateRange]);
 
-  // Prepare chart data
+  // Prepare chart data with Empty State Handling
   const chartData = useMemo(() => {
-    if (dateRange === 'allTime') {
+      // If we have data, group it normally
+      let data = [];
+
+      if (dateRange === 'allTime') {
         const monthlyMap = {};
         filteredExpenses.forEach(expense => {
           const expenseDate = expense.date instanceof Date ? expense.date : new Date(expense.date);
           const monthKey = expenseDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
           monthlyMap[monthKey] = (monthlyMap[monthKey] || 0) + parseFloat(expense.amount || 0);
         });
-
-        return Object.entries(monthlyMap)
-          .map(([name, value]) => ({ name, value }))
-          .sort((a, b) => new Date(a.name) - new Date(b.name));
+        data = Object.entries(monthlyMap).map(([name, value]) => ({ name, value }));
       } else {
         const dailyMap = {};
         filteredExpenses.forEach(expense => {
@@ -91,11 +152,31 @@ const MainDashboard = () => {
           const dayKey = expenseDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
           dailyMap[dayKey] = (dailyMap[dayKey] || 0) + parseFloat(expense.amount || 0);
         });
-
-        return Object.entries(dailyMap)
-          .map(([name, value]) => ({ name, value }))
-          .sort((a, b) => new Date(a.name) - new Date(b.name));
+        data = Object.entries(dailyMap).map(([name, value]) => ({ name, value }));
       }
+
+      // Sort by date
+      data.sort((a, b) => new Date(a.name) - new Date(b.name));
+
+      // If data is empty, provide dummy data for axes based on range
+      if (data.length === 0) {
+          const now = new Date();
+          if (dateRange === 'lastMonth') {
+             const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+             data.push({ name: lastMonth.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), value: 0 });
+             const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+             data.push({ name: lastMonthEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), value: 0 });
+          } else if (dateRange === 'thisMonth') {
+             const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+             data.push({ name: startOfMonth.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), value: 0 });
+             data.push({ name: now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), value: 0 });
+          } else {
+             // Fallback
+             data.push({ name: 'No Data', value: 0 });
+          }
+      }
+
+      return data;
   }, [filteredExpenses, dateRange]);
 
   const pieChartData = useMemo(() => {
@@ -108,7 +189,7 @@ const MainDashboard = () => {
       return Object.entries(categoryMap)
         .map(([name, value]) => ({ name, value }))
         .sort((a, b) => b.value - a.value);
-    }, [filteredExpenses]);
+  }, [filteredExpenses]);
 
   // Calculate Today's Spend
   const todaysSpend = useMemo(() => {
@@ -122,12 +203,6 @@ const MainDashboard = () => {
     }, 0);
   }, [expenses]);
 
-  const saveBudget = () => {
-    const newBudget = parseFloat(tempBudget);
-    setDailyBudget(newBudget);
-    localStorage.setItem('dailyBudget', newBudget);
-    setIsEditingBudget(false);
-  };
 
   if (loading) return <div className="loading">Loading dashboard...</div>;
 
@@ -223,13 +298,39 @@ const MainDashboard = () => {
 
         {/* Subscriptions Card */}
         <div className="bento-card" style={{ padding: 'var(--spacing-lg)' }}>
-            <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem'}}>
-                <FiZap style={{color: 'var(--warning)'}} />
-                <h3>Subscriptions</h3>
+            <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem'}}>
+                <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+                    <FiZap style={{color: 'var(--warning)'}} />
+                    <h3>Subscriptions</h3>
+                </div>
+                <button onClick={() => setIsEditingSubs(!isEditingSubs)} className="icon-btn">
+                    {isEditingSubs ? 'Done' : <FiEdit2 />}
+                </button>
             </div>
-            <div style={{display: 'flex', flexDirection: 'column', gap: '1rem'}}>
-                {MOCK_SUBSCRIPTIONS.map((sub, i) => (
-                    <div key={i} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+
+            {isEditingSubs && (
+                <div style={{marginBottom: '1rem', padding: '10px', background: 'var(--bg-app)', borderRadius: '8px'}}>
+                    <input
+                         placeholder="Name"
+                         value={newSub.name}
+                         onChange={e => setNewSub({...newSub, name: e.target.value})}
+                         className="filter-input" style={{marginBottom: '5px', padding: '4px'}}
+                    />
+                    <div style={{display: 'flex', gap: '5px'}}>
+                        <input
+                            type="number" placeholder="$$"
+                            value={newSub.cost}
+                            onChange={e => setNewSub({...newSub, cost: e.target.value})}
+                            className="filter-input" style={{padding: '4px'}}
+                        />
+                        <button className="btn-primary" onClick={addSubscription} style={{padding: '4px 8px'}}><FiPlus/></button>
+                    </div>
+                </div>
+            )}
+
+            <div style={{display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '200px', overflowY: 'auto'}}>
+                {subscriptions.map((sub) => (
+                    <div key={sub.id} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
                         <div style={{display: 'flex', gap: '0.75rem', alignItems: 'center'}}>
                             <div style={{width: '32px', height: '32px', background: 'var(--bg-app)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: 'var(--text-secondary)'}}>
                                 {sub.icon}
@@ -239,7 +340,12 @@ const MainDashboard = () => {
                                 <div style={{fontSize: '0.75rem', color: 'var(--text-tertiary)'}}>Due {sub.date}</div>
                             </div>
                         </div>
-                        <div style={{fontWeight: '600'}}>${sub.cost}</div>
+                        <div style={{fontWeight: '600', display: 'flex', alignItems: 'center', gap: '10px'}}>
+                            ${sub.cost}
+                            {isEditingSubs && (
+                                <button className="icon-btn" style={{color: 'var(--error)'}} onClick={() => removeSubscription(sub.id)}><FiTrash2 size={12}/></button>
+                            )}
+                        </div>
                     </div>
                 ))}
             </div>
@@ -247,21 +353,55 @@ const MainDashboard = () => {
 
          {/* Savings Goal Card */}
          <div className="bento-card" style={{ padding: 'var(--spacing-lg)' }}>
-            <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem'}}>
-                <FiTarget style={{color: 'var(--accent-tertiary)'}} />
-                <h3>Savings Goal</h3>
+            <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem'}}>
+                <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+                    <FiTarget style={{color: 'var(--accent-tertiary)'}} />
+                    <h3>Savings Goal</h3>
+                </div>
+                <button onClick={() => setIsEditingGoal(!isEditingGoal)} className="icon-btn">
+                    <FiEdit2 />
+                </button>
             </div>
-            <div style={{textAlign: 'center', marginBottom: '1rem'}}>
-                <div style={{fontSize: '0.9rem', color: 'var(--text-secondary)'}}>New MacBook Pro</div>
-                <div style={{fontSize: '1.5rem', fontWeight: '700', color: 'var(--text-primary)'}}>$1,250 <span style={{fontSize: '0.9rem', color: 'var(--text-tertiary)'}}>/ $2,000</span></div>
-            </div>
-            <div style={{height: '12px', background: 'var(--bg-app)', borderRadius: '6px', overflow: 'hidden', marginBottom: '0.5rem'}}>
-                 <div style={{width: '62.5%', height: '100%', background: 'linear-gradient(90deg, var(--accent-tertiary), var(--accent-primary))', borderRadius: '6px'}}></div>
-            </div>
-             <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--text-tertiary)'}}>
-                <span>Start: Jan 1</span>
-                <span>Target: June 1</span>
-            </div>
+
+            {isEditingGoal ? (
+                <div style={{display: 'flex', flexDirection: 'column', gap: '10px'}}>
+                    <input
+                         value={tempGoal.name}
+                         onChange={e => setTempGoal({...tempGoal, name: e.target.value})}
+                         className="filter-input"
+                         placeholder="Goal Name"
+                    />
+                    <div style={{display: 'flex', gap: '5px'}}>
+                         <input
+                            type="number" placeholder="Current"
+                            value={tempGoal.current}
+                            onChange={e => setTempGoal({...tempGoal, current: parseFloat(e.target.value)})}
+                            className="filter-input"
+                        />
+                         <input
+                            type="number" placeholder="Target"
+                            value={tempGoal.target}
+                            onChange={e => setTempGoal({...tempGoal, target: parseFloat(e.target.value)})}
+                            className="filter-input"
+                        />
+                    </div>
+                    <button className="btn-primary" onClick={saveGoal}>Save Goal</button>
+                </div>
+            ) : (
+                <>
+                    <div style={{textAlign: 'center', marginBottom: '1rem'}}>
+                        <div style={{fontSize: '0.9rem', color: 'var(--text-secondary)'}}>{savingsGoal.name}</div>
+                        <div style={{fontSize: '1.5rem', fontWeight: '700', color: 'var(--text-primary)'}}>${savingsGoal.current} <span style={{fontSize: '0.9rem', color: 'var(--text-tertiary)'}}>/ ${savingsGoal.target}</span></div>
+                    </div>
+                    <div style={{height: '12px', background: 'var(--bg-app)', borderRadius: '6px', overflow: 'hidden', marginBottom: '0.5rem'}}>
+                        <div style={{width: `${Math.min((savingsGoal.current / savingsGoal.target) * 100, 100)}%`, height: '100%', background: 'linear-gradient(90deg, var(--accent-tertiary), var(--accent-primary))', borderRadius: '6px'}}></div>
+                    </div>
+                    <div style={{display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--text-tertiary)'}}>
+                        <span>Start: {savingsGoal.start}</span>
+                        <span>Target: {savingsGoal.end}</span>
+                    </div>
+                </>
+            )}
         </div>
 
         {/* Category Pie Chart (Smaller) */}
