@@ -319,6 +319,26 @@
   border-radius: var(--border-radius-md);
 }
 
+/* Daily Budget Adjustments */
+/* Hide number input arrows */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type=number] {
+  -moz-appearance: textfield; /* Firefox */
+}
+
+/* Compact style for Daily Budget Card */
+.compact-card {
+    min-height: auto !important;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
 /* ============================================
    EXPENSES PAGE
    ============================================ */
@@ -634,7 +654,7 @@
 .calendar-expenses h3 {
   margin-bottom: var(--spacing-md);
   font-size: 1.1rem;
-}
+  }
 
 .calendar-expense-item {
   display: flex;

@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useExpenses } from '../hooks/useExpenses';
 import { useCurrency } from '../hooks/useCurrency';
 import { PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { FiEdit2, FiTarget, FiZap, FiTrash2, FiPlus, FiSave, FiX, FiCheck } from 'react-icons/fi';
+import { FiEdit2, FiTarget, FiZap, FiTrash2, FiPlus, FiCheck } from 'react-icons/fi';
 
 const DATE_RANGES = [
   { value: 'thisMonth', label: 'This Month' },
@@ -92,7 +92,6 @@ const MainDashboard = () => {
   // Savings Goal
   const saveGoal = () => {
     if (!tempGoal.name) {
-        // If name is empty, clear the goal
         setSavingsGoal(null);
         localStorage.removeItem('savingsGoal');
     } else {
@@ -123,8 +122,6 @@ const MainDashboard = () => {
 
 
   // --- Chart Data Logic ---
-
-  // Filter expenses
   const filteredExpenses = useMemo(() => {
     if (!expenses || expenses.length === 0) return [];
     const now = new Date();
@@ -157,9 +154,7 @@ const MainDashboard = () => {
     });
   }, [expenses, dateRange]);
 
-  // Prepare chart data with Empty State Handling
   const chartData = useMemo(() => {
-      // If we have data, group it normally
       let data = [];
 
       if (dateRange === 'allTime') {
@@ -180,10 +175,8 @@ const MainDashboard = () => {
         data = Object.entries(dailyMap).map(([name, value]) => ({ name, value }));
       }
 
-      // Sort by date
       data.sort((a, b) => new Date(a.name) - new Date(b.name));
 
-      // If data is empty, provide dummy data for axes based on range
       if (data.length === 0) {
           const now = new Date();
           if (dateRange === 'lastMonth') {
@@ -196,7 +189,6 @@ const MainDashboard = () => {
              data.push({ name: startOfMonth.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), value: 0 });
              data.push({ name: now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), value: 0 });
           } else {
-             // Fallback
              data.push({ name: 'No Data', value: 0 });
           }
       }
@@ -216,7 +208,6 @@ const MainDashboard = () => {
         .sort((a, b) => b.value - a.value);
   }, [filteredExpenses]);
 
-  // Calculate Today's Spend
   const todaysSpend = useMemo(() => {
     const today = new Date();
     return expenses.reduce((total, expense) => {
@@ -280,50 +271,48 @@ const MainDashboard = () => {
           </div>
         </div>
 
-        {/* Daily Budget Card - IMPROVED EDIT UI */}
-        <div className="bento-card" style={{ padding: 'var(--spacing-lg)' }}>
-            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem'}}>
-                <h3>Daily Budget</h3>
+        {/* Daily Budget Card - COMPACT & RESIZED */}
+        <div className="bento-card compact-card" style={{ padding: 'var(--spacing-lg)' }}>
+            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem'}}>
+                <h3 style={{margin: 0, fontSize: '1rem'}}>Daily Budget</h3>
                 <button onClick={() => setIsEditingBudget(!isEditingBudget)} className="icon-btn">
                     <FiEdit2 />
                 </button>
             </div>
 
             {isEditingBudget ? (
-                <div style={{display: 'flex', flexDirection: 'column', gap: '0.5rem'}}>
-                    <label style={{fontSize: '0.8rem', color: 'var(--text-secondary)'}}>Set daily limit:</label>
-                    <div style={{display: 'flex', gap: '0.5rem'}}>
-                        <input
-                            type="number"
-                            value={tempBudget}
-                            onChange={(e) => setTempBudget(e.target.value)}
-                            className="filter-input"
-                            autoFocus
-                        />
-                        <button className="btn-primary" style={{ padding: '0 12px' }} onClick={saveBudget}><FiCheck/></button>
-                    </div>
+                <div style={{display: 'flex', gap: '0.5rem', alignItems: 'center'}}>
+                    <input
+                        type="number"
+                        value={tempBudget}
+                        onChange={(e) => setTempBudget(e.target.value)}
+                        className="filter-input"
+                        autoFocus
+                        style={{ width: '100%' }}
+                    />
+                    <button className="btn-primary" style={{ padding: '8px' }} onClick={saveBudget}><FiCheck/></button>
                 </div>
             ) : (
                 <>
-                    <div style={{ fontSize: '2rem', fontWeight: '700', color: todaysSpend > dailyBudget ? 'var(--error)' : 'var(--text-primary)' }}>
-                        {formatCurrency(todaysSpend)} <span style={{fontSize: '1rem', color: 'var(--text-tertiary)'}}>/ {formatCurrency(dailyBudget)}</span>
+                    <div style={{ fontSize: '1.75rem', fontWeight: '700', color: todaysSpend > dailyBudget ? 'var(--error)' : 'var(--text-primary)', lineHeight: 1.2 }}>
+                        {formatCurrency(todaysSpend)} <span style={{fontSize: '0.9rem', color: 'var(--text-tertiary)', fontWeight: 500}}>/ {formatCurrency(dailyBudget)}</span>
                     </div>
-                    <div style={{ marginTop: '0.5rem', height: '6px', background: 'var(--bg-app)', borderRadius: '3px', overflow: 'hidden' }}>
+                    <div style={{ marginTop: '0.75rem', height: '4px', background: 'var(--bg-app)', borderRadius: '2px', overflow: 'hidden' }}>
                         <div style={{
                             width: `${Math.min((todaysSpend / dailyBudget) * 100, 100)}%`,
                             height: '100%',
                             background: todaysSpend > dailyBudget ? 'var(--error)' : 'var(--accent-secondary)',
-                            borderRadius: '3px'
+                            borderRadius: '2px'
                         }} />
                     </div>
-                    <p style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                        {todaysSpend > dailyBudget ? 'You have exceeded your daily limit.' : 'You are within your daily budget.'}
+                    <p style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                        {todaysSpend > dailyBudget ? 'Over limit.' : 'Within budget.'}
                     </p>
                 </>
             )}
         </div>
 
-        {/* Subscriptions Card */}
+        {/* Subscriptions Card - IMPROVED EMPTY STATE */}
         <div className="bento-card" style={{ padding: 'var(--spacing-lg)' }}>
             <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem'}}>
                 <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
@@ -355,30 +344,37 @@ const MainDashboard = () => {
                 </div>
             )}
 
-            <div style={{display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '200px', overflowY: 'auto'}}>
-                {subscriptions.map((sub) => (
-                    <div key={sub.id} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                        <div style={{display: 'flex', gap: '0.75rem', alignItems: 'center'}}>
-                            <div style={{width: '32px', height: '32px', background: 'var(--bg-app)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: 'var(--text-secondary)'}}>
-                                {sub.icon}
+            {subscriptions.length === 0 && !isEditingSubs ? (
+                <div style={{textAlign: 'center', padding: '1rem 0', color: 'var(--text-secondary)'}}>
+                    <p style={{marginBottom: '1rem', fontSize: '0.9rem'}}>No subscriptions</p>
+                    <button className="btn-primary" style={{width: '100%', fontSize: '0.9rem'}} onClick={() => setIsEditingSubs(true)}>Add Subscription</button>
+                </div>
+            ) : (
+                <div style={{display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '200px', overflowY: 'auto'}}>
+                    {subscriptions.map((sub) => (
+                        <div key={sub.id} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                            <div style={{display: 'flex', gap: '0.75rem', alignItems: 'center'}}>
+                                <div style={{width: '32px', height: '32px', background: 'var(--bg-app)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: 'var(--text-secondary)'}}>
+                                    {sub.icon}
+                                </div>
+                                <div>
+                                    <div style={{fontWeight: '500', fontSize: '0.9rem'}}>{sub.name}</div>
+                                    <div style={{fontSize: '0.75rem', color: 'var(--text-tertiary)'}}>Due {sub.date}</div>
+                                </div>
                             </div>
-                            <div>
-                                <div style={{fontWeight: '500', fontSize: '0.9rem'}}>{sub.name}</div>
-                                <div style={{fontSize: '0.75rem', color: 'var(--text-tertiary)'}}>Due {sub.date}</div>
+                            <div style={{fontWeight: '600', display: 'flex', alignItems: 'center', gap: '10px'}}>
+                                ${sub.cost}
+                                {isEditingSubs && (
+                                    <button className="icon-btn" style={{color: 'var(--error)'}} onClick={() => removeSubscription(sub.id)}><FiTrash2 size={12}/></button>
+                                )}
                             </div>
                         </div>
-                        <div style={{fontWeight: '600', display: 'flex', alignItems: 'center', gap: '10px'}}>
-                            ${sub.cost}
-                            {isEditingSubs && (
-                                <button className="icon-btn" style={{color: 'var(--error)'}} onClick={() => removeSubscription(sub.id)}><FiTrash2 size={12}/></button>
-                            )}
-                        </div>
-                    </div>
-                ))}
-            </div>
+                    ))}
+                </div>
+            )}
         </div>
 
-         {/* Savings Goal Card - IMPROVED */}
+         {/* Savings Goal Card */}
          <div className="bento-card" style={{ padding: 'var(--spacing-lg)' }}>
             <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem'}}>
                 <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
