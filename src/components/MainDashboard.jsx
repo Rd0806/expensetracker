@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useExpenses } from '../hooks/useExpenses';
 import { useCurrency } from '../hooks/useCurrency';
 import { PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { FiEdit2, FiTarget, FiZap, FiTrash2, FiPlus } from 'react-icons/fi';
+import { FiEdit2, FiTarget, FiZap, FiTrash2, FiPlus, FiSave, FiX, FiCheck } from 'react-icons/fi';
 
 const DATE_RANGES = [
   { value: 'thisMonth', label: 'This Month' },
@@ -51,8 +51,8 @@ const MainDashboard = () => {
       name: 'New MacBook Pro',
       current: 1250,
       target: 2000,
-      start: 'Jan 1',
-      end: 'June 1'
+      start: '2024-01-01',
+      end: '2024-06-01'
     };
   });
   const [isEditingGoal, setIsEditingGoal] = useState(false);
@@ -91,9 +91,34 @@ const MainDashboard = () => {
 
   // Savings Goal
   const saveGoal = () => {
-    setSavingsGoal(tempGoal);
-    localStorage.setItem('savingsGoal', JSON.stringify(tempGoal));
+    if (!tempGoal.name) {
+        // If name is empty, clear the goal
+        setSavingsGoal(null);
+        localStorage.removeItem('savingsGoal');
+    } else {
+        setSavingsGoal(tempGoal);
+        localStorage.setItem('savingsGoal', JSON.stringify(tempGoal));
+    }
     setIsEditingGoal(false);
+  };
+
+  const createNewGoal = () => {
+      const newGoal = {
+          name: 'New Goal',
+          current: 0,
+          target: 1000,
+          start: new Date().toISOString().split('T')[0],
+          end: new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0]
+      };
+      setTempGoal(newGoal);
+      setSavingsGoal(newGoal);
+      setIsEditingGoal(true);
+  };
+
+  const clearGoal = () => {
+      setSavingsGoal(null);
+      localStorage.removeItem('savingsGoal');
+      setIsEditingGoal(false);
   };
 
 
@@ -255,7 +280,7 @@ const MainDashboard = () => {
           </div>
         </div>
 
-        {/* Daily Budget Card */}
+        {/* Daily Budget Card - IMPROVED EDIT UI */}
         <div className="bento-card" style={{ padding: 'var(--spacing-lg)' }}>
             <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem'}}>
                 <h3>Daily Budget</h3>
@@ -265,16 +290,18 @@ const MainDashboard = () => {
             </div>
 
             {isEditingBudget ? (
-                <div style={{display: 'flex', gap: '0.5rem'}}>
-                    <input
-                        type="number"
-                        value={tempBudget}
-                        onChange={(e) => setTempBudget(e.target.value)}
-                        className="filter-input"
-                        autoFocus
-                        style={{ width: '100px', padding: '4px' }}
-                    />
-                    <button className="btn-primary" style={{ padding: '4px 12px', fontSize: '0.85rem' }} onClick={saveBudget}>Save</button>
+                <div style={{display: 'flex', flexDirection: 'column', gap: '0.5rem'}}>
+                    <label style={{fontSize: '0.8rem', color: 'var(--text-secondary)'}}>Set daily limit:</label>
+                    <div style={{display: 'flex', gap: '0.5rem'}}>
+                        <input
+                            type="number"
+                            value={tempBudget}
+                            onChange={(e) => setTempBudget(e.target.value)}
+                            className="filter-input"
+                            autoFocus
+                        />
+                        <button className="btn-primary" style={{ padding: '0 12px' }} onClick={saveBudget}><FiCheck/></button>
+                    </div>
                 </div>
             ) : (
                 <>
@@ -314,16 +341,16 @@ const MainDashboard = () => {
                          placeholder="Name"
                          value={newSub.name}
                          onChange={e => setNewSub({...newSub, name: e.target.value})}
-                         className="filter-input" style={{marginBottom: '5px', padding: '4px'}}
+                         className="filter-input" style={{marginBottom: '5px', padding: '8px'}}
                     />
                     <div style={{display: 'flex', gap: '5px'}}>
                         <input
                             type="number" placeholder="$$"
                             value={newSub.cost}
                             onChange={e => setNewSub({...newSub, cost: e.target.value})}
-                            className="filter-input" style={{padding: '4px'}}
+                            className="filter-input" style={{padding: '8px'}}
                         />
-                        <button className="btn-primary" onClick={addSubscription} style={{padding: '4px 8px'}}><FiPlus/></button>
+                        <button className="btn-primary" onClick={addSubscription} style={{padding: '8px'}}><FiPlus/></button>
                     </div>
                 </div>
             )}
@@ -351,19 +378,26 @@ const MainDashboard = () => {
             </div>
         </div>
 
-         {/* Savings Goal Card */}
+         {/* Savings Goal Card - IMPROVED */}
          <div className="bento-card" style={{ padding: 'var(--spacing-lg)' }}>
             <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem'}}>
                 <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
                     <FiTarget style={{color: 'var(--accent-tertiary)'}} />
                     <h3>Savings Goal</h3>
                 </div>
-                <button onClick={() => setIsEditingGoal(!isEditingGoal)} className="icon-btn">
-                    <FiEdit2 />
-                </button>
+                {savingsGoal && (
+                    <button onClick={() => setIsEditingGoal(!isEditingGoal)} className="icon-btn">
+                        <FiEdit2 />
+                    </button>
+                )}
             </div>
 
-            {isEditingGoal ? (
+            {!savingsGoal ? (
+                 <div style={{textAlign: 'center', padding: '2rem 0', color: 'var(--text-secondary)'}}>
+                     <p style={{marginBottom: '1rem'}}>No goal set</p>
+                     <button className="btn-primary" style={{width: '100%'}} onClick={createNewGoal}>Create Goal</button>
+                 </div>
+            ) : isEditingGoal ? (
                 <div style={{display: 'flex', flexDirection: 'column', gap: '10px'}}>
                     <input
                          value={tempGoal.name}
@@ -385,7 +419,24 @@ const MainDashboard = () => {
                             className="filter-input"
                         />
                     </div>
-                    <button className="btn-primary" onClick={saveGoal}>Save Goal</button>
+                    <div style={{display: 'flex', gap: '5px'}}>
+                        <input
+                            type="date"
+                            value={tempGoal.start}
+                            onChange={e => setTempGoal({...tempGoal, start: e.target.value})}
+                            className="filter-input"
+                        />
+                        <input
+                            type="date"
+                            value={tempGoal.end}
+                            onChange={e => setTempGoal({...tempGoal, end: e.target.value})}
+                            className="filter-input"
+                        />
+                    </div>
+                    <div style={{display: 'flex', gap: '10px', marginTop: '5px'}}>
+                        <button className="btn-primary" style={{flex: 1}} onClick={saveGoal}>Save</button>
+                        <button className="btn-delete" style={{flex: 1, justifyContent: 'center'}} onClick={clearGoal}>Clear</button>
+                    </div>
                 </div>
             ) : (
                 <>
