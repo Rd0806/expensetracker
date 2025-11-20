@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useExpenses } from '../hooks/useExpenses';
 import { useCurrency } from '../hooks/useCurrency';
 import { PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { FiEdit2, FiTarget, FiZap, FiTrash2, FiPlus, FiCheck } from 'react-icons/fi';
+import { FiEdit2, FiTarget, FiZap, FiTrash2, FiPlus, FiCheck, FiX } from 'react-icons/fi';
 
 const DATE_RANGES = [
   { value: 'thisMonth', label: 'This Month' },
@@ -280,48 +280,53 @@ const MainDashboard = () => {
           </div>
         </div>
 
-        {/* Daily Budget Card - COMPACT & RESIZED */}
-        <div className="bento-card compact-card" style={{ padding: 'var(--spacing-lg)' }}>
-            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem'}}>
-                <h3 style={{margin: 0, fontSize: '1rem'}}>Daily Budget</h3>
+        {/* Daily Budget Card */}
+        <div className="bento-card" style={{ padding: 'var(--spacing-lg)' }}>
+            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem'}}>
+                <h3>Daily Budget</h3>
                 <button onClick={() => setIsEditingBudget(!isEditingBudget)} className="icon-btn">
                     <FiEdit2 />
                 </button>
             </div>
 
             {isEditingBudget ? (
-                <div style={{display: 'flex', gap: '0.5rem', alignItems: 'center'}}>
-                    <input
-                        type="number"
-                        value={tempBudget}
-                        onChange={(e) => setTempBudget(e.target.value)}
-                        className="filter-input"
-                        autoFocus
-                        style={{ width: '100%' }}
-                    />
-                    <button className="btn-primary" style={{ padding: '8px' }} onClick={saveBudget}><FiCheck/></button>
+                <div style={{display: 'flex', flexDirection: 'column', gap: '10px'}}>
+                     <div style={{display: 'flex', flexDirection: 'column', gap: '5px'}}>
+                        <label style={{fontSize: '0.85rem', color: 'var(--text-secondary)'}}>Daily Limit</label>
+                        <input
+                            type="number"
+                            value={tempBudget}
+                            onChange={(e) => setTempBudget(e.target.value)}
+                            className="filter-input"
+                            autoFocus
+                        />
+                    </div>
+                    <div style={{display: 'flex', gap: '10px', marginTop: '5px'}}>
+                        <button className="btn-primary" style={{flex: 1}} onClick={saveBudget}>Save</button>
+                        <button className="btn-delete" style={{flex: 1, justifyContent: 'center'}} onClick={() => setIsEditingBudget(false)}>Cancel</button>
+                    </div>
                 </div>
             ) : (
                 <>
-                    <div style={{ fontSize: '1.75rem', fontWeight: '700', color: todaysSpend > dailyBudget ? 'var(--error)' : 'var(--text-primary)', lineHeight: 1.2 }}>
-                        {formatCurrency(todaysSpend)} <span style={{fontSize: '0.9rem', color: 'var(--text-tertiary)', fontWeight: 500}}>/ {formatCurrency(dailyBudget)}</span>
+                    <div style={{ fontSize: '2rem', fontWeight: '700', color: todaysSpend > dailyBudget ? 'var(--error)' : 'var(--text-primary)' }}>
+                        {formatCurrency(todaysSpend)} <span style={{fontSize: '1rem', color: 'var(--text-tertiary)'}}>/ {formatCurrency(dailyBudget)}</span>
                     </div>
-                    <div style={{ marginTop: '0.75rem', height: '4px', background: 'var(--bg-app)', borderRadius: '2px', overflow: 'hidden' }}>
+                    <div style={{ marginTop: '0.5rem', height: '6px', background: 'var(--bg-app)', borderRadius: '3px', overflow: 'hidden' }}>
                         <div style={{
                             width: `${Math.min((todaysSpend / dailyBudget) * 100, 100)}%`,
                             height: '100%',
                             background: todaysSpend > dailyBudget ? 'var(--error)' : 'var(--accent-secondary)',
-                            borderRadius: '2px'
+                            borderRadius: '3px'
                         }} />
                     </div>
-                    <p style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                        {todaysSpend > dailyBudget ? 'Over limit.' : 'Within budget.'}
+                    <p style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                        {todaysSpend > dailyBudget ? 'You have exceeded your daily limit.' : 'You are within your daily budget.'}
                     </p>
                 </>
             )}
         </div>
 
-        {/* Subscriptions Card - IMPROVED EMPTY STATE & UI */}
+        {/* Subscriptions Card */}
         <div className="bento-card" style={{ padding: 'var(--spacing-lg)' }}>
             <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem'}}>
                 <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
@@ -336,10 +341,10 @@ const MainDashboard = () => {
                 )}
             </div>
 
-            {/* Unified Add/Edit Interface: Match Budget Style */}
+            {/* Unified Add/Edit Interface: Match Savings Goal Style */}
             {(isEditingSubs || subscriptions.length === 0) && (
                 <div style={{marginBottom: '1rem', padding: '10px', background: 'var(--bg-app)', borderRadius: '8px', border: '1px solid var(--border-subtle)'}}>
-                    <div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
+                    <div style={{display: 'flex', flexDirection: 'column', gap: '10px'}}>
                         <input
                             placeholder="Name (e.g. Netflix)"
                             value={newSub.name}
@@ -369,10 +374,10 @@ const MainDashboard = () => {
                                     }</option>
                                 ))}
                             </select>
-                            <button className="btn-primary" style={{padding: '8px'}} onClick={addSubscription} title="Add Subscription">
-                                <FiPlus/>
-                            </button>
                         </div>
+                         <button className="btn-primary" style={{width: '100%'}} onClick={addSubscription}>
+                                Add Subscription
+                        </button>
                     </div>
                 </div>
             )}
