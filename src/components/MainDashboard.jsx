@@ -42,21 +42,21 @@ const MainDashboard = () => {
     ];
   });
   const [isEditingSubs, setIsEditingSubs] = useState(false);
-  const [newSub, setNewSub] = useState({ name: '', cost: '', date: '' });
+  const [newSub, setNewSub] = useState({ name: '', cost: '', date: '1' });
 
   // --- Savings Goal State ---
   const [savingsGoal, setSavingsGoal] = useState(() => {
     const saved = localStorage.getItem('savingsGoal');
-    return saved ? JSON.parse(saved) : {
-      name: 'New MacBook Pro',
-      current: 1250,
-      target: 2000,
-      start: '2024-01-01',
-      end: '2024-06-01'
-    };
+    return saved ? JSON.parse(saved) : null;
   });
   const [isEditingGoal, setIsEditingGoal] = useState(false);
-  const [tempGoal, setTempGoal] = useState(savingsGoal);
+  const [tempGoal, setTempGoal] = useState(savingsGoal || {
+    name: '',
+    current: 0,
+    target: 0,
+    start: '',
+    end: ''
+  });
 
   // --- Handlers ---
 
@@ -71,16 +71,25 @@ const MainDashboard = () => {
   // Subscriptions
   const addSubscription = () => {
     if (!newSub.name || !newSub.cost) return;
+
+    // Format date suffix
+    const day = parseInt(newSub.date);
+    let suffix = 'th';
+    if (day === 1 || day === 21 || day === 31) suffix = 'st';
+    else if (day === 2 || day === 22) suffix = 'nd';
+    else if (day === 3 || day === 23) suffix = 'rd';
+
     const updated = [...subscriptions, {
         id: Date.now(),
         name: newSub.name,
         cost: parseFloat(newSub.cost),
-        date: newSub.date || '1st',
+        date: `${day}${suffix}`,
         icon: newSub.name[0].toUpperCase()
     }];
     setSubscriptions(updated);
     localStorage.setItem('subscriptions', JSON.stringify(updated));
-    setNewSub({ name: '', cost: '', date: '' });
+    setNewSub({ name: '', cost: '', date: '1' });
+    setIsEditingSubs(false);
   };
 
   const removeSubscription = (id) => {
@@ -312,42 +321,66 @@ const MainDashboard = () => {
             )}
         </div>
 
-        {/* Subscriptions Card - IMPROVED EMPTY STATE */}
+        {/* Subscriptions Card - IMPROVED EMPTY STATE & UI */}
         <div className="bento-card" style={{ padding: 'var(--spacing-lg)' }}>
             <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem'}}>
                 <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
                     <FiZap style={{color: 'var(--warning)'}} />
                     <h3>Subscriptions</h3>
                 </div>
-                <button onClick={() => setIsEditingSubs(!isEditingSubs)} className="icon-btn">
-                    {isEditingSubs ? 'Done' : <FiEdit2 />}
-                </button>
+                {/* Only show main edit toggle if list is not empty */}
+                {subscriptions.length > 0 && (
+                    <button onClick={() => setIsEditingSubs(!isEditingSubs)} className="icon-btn">
+                        {isEditingSubs ? 'Done' : <FiEdit2 />}
+                    </button>
+                )}
             </div>
 
-            {isEditingSubs && (
-                <div style={{marginBottom: '1rem', padding: '10px', background: 'var(--bg-app)', borderRadius: '8px'}}>
-                    <input
-                         placeholder="Name"
-                         value={newSub.name}
-                         onChange={e => setNewSub({...newSub, name: e.target.value})}
-                         className="filter-input" style={{marginBottom: '5px', padding: '8px'}}
-                    />
-                    <div style={{display: 'flex', gap: '5px'}}>
+            {/* Unified Add/Edit Interface: Match Budget Style */}
+            {(isEditingSubs || subscriptions.length === 0) && (
+                <div style={{marginBottom: '1rem', padding: '10px', background: 'var(--bg-app)', borderRadius: '8px', border: '1px solid var(--border-subtle)'}}>
+                    <div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
                         <input
-                            type="number" placeholder="$$"
-                            value={newSub.cost}
-                            onChange={e => setNewSub({...newSub, cost: e.target.value})}
-                            className="filter-input" style={{padding: '8px'}}
+                            placeholder="Name (e.g. Netflix)"
+                            value={newSub.name}
+                            onChange={e => setNewSub({...newSub, name: e.target.value})}
+                            className="filter-input"
+                            style={{ width: '100%' }}
                         />
-                        <button className="btn-primary" onClick={addSubscription} style={{padding: '8px'}}><FiPlus/></button>
+                        <div style={{display: 'flex', gap: '8px'}}>
+                            <input
+                                type="number" placeholder="$$"
+                                value={newSub.cost}
+                                onChange={e => setNewSub({...newSub, cost: e.target.value})}
+                                className="filter-input"
+                                style={{flex: 1}}
+                            />
+                            <select
+                                value={newSub.date}
+                                onChange={e => setNewSub({...newSub, date: e.target.value})}
+                                className="filter-input"
+                                style={{flex: 1}}
+                            >
+                                {Array.from({length: 31}, (_, i) => i + 1).map(d => (
+                                    <option key={d} value={d}>{d}{
+                                        d === 1 || d === 21 || d === 31 ? 'st' :
+                                        d === 2 || d === 22 ? 'nd' :
+                                        d === 3 || d === 23 ? 'rd' : 'th'
+                                    }</option>
+                                ))}
+                            </select>
+                            <button className="btn-primary" style={{padding: '8px'}} onClick={addSubscription} title="Add Subscription">
+                                <FiPlus/>
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
 
             {subscriptions.length === 0 && !isEditingSubs ? (
+                // This state is essentially covered by the auto-show form above, but just in case
                 <div style={{textAlign: 'center', padding: '1rem 0', color: 'var(--text-secondary)'}}>
                     <p style={{marginBottom: '1rem', fontSize: '0.9rem'}}>No subscriptions</p>
-                    <button className="btn-primary" style={{width: '100%', fontSize: '0.9rem'}} onClick={() => setIsEditingSubs(true)}>Add Subscription</button>
                 </div>
             ) : (
                 <div style={{display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '200px', overflowY: 'auto'}}>
